@@ -1,5 +1,7 @@
 <?php
 
+namespace MelvDouc\SwissChessTests;
+
 class Logger
 {
   protected static function getLogDir(): string
@@ -11,7 +13,7 @@ class Logger
   {
     $message = json_encode($data, JSON_PRETTY_PRINT);
     [$_, $caller] = debug_backtrace(false, 2);
-    $fileName = date("Y-m-d-H-i-s") . "-" . $caller["class"] . "-" . $caller["function"];
+    $fileName = date("Y-m-d\THis");
     file_put_contents(static::getLogDir() . "/$fileName.json", $message);
   }
 }

@@ -1,7 +1,7 @@
 <?php
-use MelvDouc\SwissChess\Interface\Pairing as IPairing;
+namespace MelvDouc\SwissChessTests;
 
-require_once __DIR__ . "/TestPlayer.php";
+use MelvDouc\SwissChess\Interface\Pairing as IPairing;
 
 class TestPairing implements IPairing
 {

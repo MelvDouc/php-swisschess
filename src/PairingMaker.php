@@ -3,9 +3,11 @@
 namespace MelvDouc\SwissChess;
 
 use MelvDouc\SwissChess\Enum\Color;
+use MelvDouc\SwissChess\Enum\GameResult;
 use MelvDouc\SwissChess\Interface\Pairing;
 use MelvDouc\SwissChess\Interface\Player;
 use MelvDouc\SwissChess\Utils\Map;
+use MelvDouc\SwissChess\Utils\TempPairing;
 
 class PairingMaker
 {
@@ -26,6 +28,11 @@ class PairingMaker
     $this->players = $players;
     $this->pointsPerWin = $pointsPerWin;
     $this->pointsPerDraw = $pointsPerDraw;
+  }
+
+  public function getPlayers(): array
+  {
+    return $this->players;
   }
 
   /**
@@ -62,7 +69,7 @@ class PairingMaker
   }
 
   /**
-   * @return Player[][] - An array of the type `[whitePlayer: Player, blackPlayer: Player|null][]`.
+   * @return TempPairing[]
    */
   public function getNextPairings(int $roundNumber): array
   {
@@ -106,19 +113,19 @@ class PairingMaker
     usort($players, fn(Player $a, Player $b) => $b->getRating() - $a->getRating());
     $bye = $this->hasBye() ? array_pop($players) : null;
     $halfLength = count($players) / 2;
-    /** @var Player[][] */
+    /** @var TempPairing[] */
     $pairings = [];
 
     for ($i = 0; $i < $halfLength; $i++) {
       $player1 = $players[$i];
       $player2 = $players[$i + $halfLength];
       $pairings[] = ($i % 2 === 0)
-        ? [$player1, $player2]
-        : [$player2, $player1];
+        ? new TempPairing($player1, $player2, GameResult::None)
+        : new TempPairing($player2, $player1, GameResult::None);
     }
 
     if ($bye)
-      $pairings[] = [$bye, null];
+      $pairings[] = new TempPairing($bye, null, GameResult::WhiteWin);
 
     return $pairings;
   }
@@ -142,13 +149,13 @@ class PairingMaker
       }
     }
 
-    /** @var Map<Player[]> */
+    /** @var Map<TempPairing> */
     $pairingRecord = new Map();
     $this->tryPairings($players, $dataMap, $pairingRecord);
     $pairings = $pairingRecord->getValues();
 
     if ($bye)
-      $pairings[] = [$bye, null];
+      $pairings[] = new TempPairing($bye, null, GameResult::WhiteWin);
 
     return $pairings;
   }
@@ -156,7 +163,7 @@ class PairingMaker
   /**
    * @param Player[] $players
    * @param Map<PlayerData> $dataMap
-   * @param Map<Player[]> $pairingMap
+   * @param Map<TempPairing> $pairingMap
    */
   private function tryPairings(array $players, Map $dataMap, Map $pairingMap)
   {
@@ -175,8 +182,8 @@ class PairingMaker
         continue;
 
       $pairing = ($color === Color::White)
-        ? [$topSeed, $opponent]
-        : [$opponent, $topSeed];
+        ? new TempPairing($topSeed, $opponent, GameResult::None)
+        : new TempPairing($opponent, $topSeed, GameResult::None);
       $key = ((string) $topSeedId) . "-" . ((string) $opponentId);
       $pairingMap->set($key, $pairing);
       $otherPlayers = array_slice($players, 1);
