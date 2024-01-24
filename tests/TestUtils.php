@@ -5,6 +5,7 @@ namespace MelvDouc\SwissChessTests;
 use MelvDouc\SwissChess\Enum\GameResult;
 use MelvDouc\SwissChess\PairingMaker;
 use MelvDouc\SwissChess\PlayerResult;
+use MelvDouc\SwissChess\Utils\TempPairing;
 
 final class TestUtils
 {
@@ -25,15 +26,22 @@ final class TestUtils
     for ($i = 1; $i <= $numberOfPlayers; $i++)
       $players[] = new TestPlayer("player-$i");
 
-    $pairingMaker = new PairingMaker($players);
+    /** @var TestPairing[][] */
+    $rounds = [];
+    $roundNumber = 1;
 
-    for ($i = 1; $i <= $numberOfRounds; $i++) {
-      $pairings = $pairingMaker->getNextPairings($i);
-      foreach ($pairings as $p) {
-        new TestPairing($i, $p->whitePlayer, $p->blackPlayer, $p->result->value);
-      }
+    while (count($rounds) < $numberOfRounds) {
+      $pairingMaker = new PairingMaker($players, $rounds);
+      $pairings = $pairingMaker->getNextPairings($roundNumber);
+      $round = array_map(array: $pairings, callback: function (TempPairing $p) use ($roundNumber) {
+        $result = $p->blackPlayer ? self::getRandomResult() : $p->result;
+        return new TestPairing($roundNumber, $p->whitePlayer, $p->blackPlayer, $result->value);
+      });
+      $rounds[] = $round;
+      $roundNumber++;
     }
 
+    $pairingMaker = new PairingMaker($players, $rounds);
     return $pairingMaker;
   }
 

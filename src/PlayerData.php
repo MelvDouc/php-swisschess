@@ -69,10 +69,10 @@ class PlayerData
   private float $opponentPoints = 0.0;
   private bool $isFrozen = false;
 
-  public function __construct(Player $player, float $pointsPerWin, float $pointsPerDraw)
+  public function __construct(Player $player, array $history, float $pointsPerWin, float $pointsPerDraw)
   {
     $this->player = $player;
-    $this->history = $player->getHistory();
+    $this->history = $history;
     $data = $this->getData($pointsPerWin, $pointsPerDraw);
     $numberOfGamesPlayed = count($this->history);
     $numberOfBlackGames = $numberOfGamesPlayed - $data["numberOfWhiteGames"];

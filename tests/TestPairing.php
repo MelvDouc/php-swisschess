@@ -11,8 +11,6 @@ class TestPairing implements IPairing
     private readonly ?TestPlayer $blackPlayer,
     private string $result,
   ) {
-    $whitePlayer->addToHistory($this);
-    $blackPlayer?->addToHistory($this);
   }
 
   public function getRoundNumber(): int
