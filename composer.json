@@ -1,7 +1,7 @@
 {
   "name": "melvdouc/swisschess",
   "type": "library",
-  "description": "Utility classes to generate Swiss system chess tournament pairings.",
+  "description": "Utility classes to generate pairings for a Swiss system chess tournament.",
   "keywords": [
     "chess",
     "Swiss",
