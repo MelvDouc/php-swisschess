@@ -15,17 +15,23 @@ class PairingMaker
    * @var Player[]
    */
   private readonly array $players;
+  /**
+   * @var Pairing[][]
+   */
+  private readonly array $rounds;
   private readonly float $pointsPerWin;
   private readonly float $pointsPerDraw;
 
   /**
    * @param Player[] $players
+   * @param Pairing[][] $rounds
    * @param float $pointsPerWin
    * @param float $pointsPerDraw
    */
-  public function __construct(array $players, float $pointsPerWin = 1, float $pointsPerDraw = 0.5)
+  public function __construct(array $players, array $rounds, float $pointsPerWin = 1, float $pointsPerDraw = 0.5)
   {
     $this->players = $players;
+    $this->rounds = $rounds;
     $this->pointsPerWin = $pointsPerWin;
     $this->pointsPerDraw = $pointsPerDraw;
   }
@@ -33,6 +39,11 @@ class PairingMaker
   public function getPlayers(): array
   {
     return $this->players;
+  }
+
+  public function getRounds(): array
+  {
+    return $this->rounds;
   }
 
   /**
@@ -79,15 +90,40 @@ class PairingMaker
   }
 
   /**
+   * @return array<int,Pairing[]>
+   */
+  public function getHistories(): array
+  {
+    $historyMap = [];
+
+    foreach ($this->rounds as $round) {
+      foreach ($round as $pairing) {
+        $id = $pairing->getWhitePlayer()->getId();
+        $historyMap[$id] ??= [];
+        $historyMap[$id][] = $pairing;
+
+        if ($pairing->getBlackPlayer()) {
+          $id = $pairing->getBlackPlayer()->getId();
+          $historyMap[$id] ??= [];
+          $historyMap[$id][] = $pairing;
+        }
+      }
+    }
+
+    return $historyMap;
+  }
+
+  /**
    * @return Map<PlayerData>
    */
   public function getPlayerDataMap(): Map
   {
+    $histories = $this->getHistories();
     /** @var Map<PlayerData> */
     $dataMap = new Map();
 
     foreach ($this->players as $player) {
-      $data = new PlayerData($player, $this->pointsPerWin, $this->pointsPerDraw);
+      $data = new PlayerData($player, $histories[$player->getId()], $this->pointsPerWin, $this->pointsPerDraw);
       $dataMap->set($player->getId(), $data);
     }
 

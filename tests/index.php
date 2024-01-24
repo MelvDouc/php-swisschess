@@ -15,7 +15,7 @@ TestSuite::test("First round pairings should be rating-based.", function (TestSu
   $p3 = new TestPlayer("p3", 1600);
   $p4 = new TestPlayer("p4", 1500);
   $players = [$p1, $p2, $p3, $p4];
-  $pairingMaker = new PairingMaker($players);
+  $pairingMaker = new PairingMaker($players, []);
   $pairings = $pairingMaker->getNextPairings(1);
   $testSuite->assertCount($pairings, 2);
   $testSuite->assertEquals($p1, $pairings[0]->whitePlayer);
@@ -30,9 +30,13 @@ TestSuite::test("Subsequent round pairings should be point-based.", function (Te
   $p3 = new TestPlayer("p3");
   $p4 = new TestPlayer("p4");
   $players = [$p1, $p2, $p3, $p4];
-  new TestPairing(1, $p1, $p3, GameResult::WhiteWin->value);
-  new TestPairing(1, $p4, $p2, GameResult::Draw->value);
-  $pairingMaker = new PairingMaker($players);
+  $rounds = [
+    [
+      new TestPairing(1, $p1, $p3, GameResult::WhiteWin->value),
+      new TestPairing(1, $p4, $p2, GameResult::Draw->value)
+    ]
+  ];
+  $pairingMaker = new PairingMaker($players, $rounds);
   $pairings = $pairingMaker->getNextPairings(2);
   $testSuite->assertCount($pairings, 2);
 });
@@ -40,10 +44,11 @@ TestSuite::test("Subsequent round pairings should be point-based.", function (Te
 TestSuite::test("Everyone should be paired up.", function (TestSuite $testSuite) {
   $numberOfPlayers = 10;
   $numberOfRounds = 4;
-  $players = TestUtils::playRandomTournament($numberOfPlayers, $numberOfRounds)->getPlayers();
+  $pairingMaker = TestUtils::playRandomTournament($numberOfPlayers, $numberOfRounds);
+  $histories = $pairingMaker->getHistories();
 
-  foreach ($players as $player) {
-    $testSuite->assertCount($player->getHistory(), $numberOfRounds);
+  foreach ($pairingMaker->getPlayers() as $player) {
+    $testSuite->assertCount($histories[$player->getId()], $numberOfRounds);
   }
 });
 
@@ -64,8 +69,8 @@ TestSuite::test("A tournament should be able to handle many players.", function 
   $numberOfPlayers = 120;
   $numberOfRounds = 11;
   try {
-    TestUtils::playRandomTournament($numberOfPlayers, $numberOfRounds);
-    $testSuite->assert(true);
+    $pairingMaker = TestUtils::playRandomTournament($numberOfPlayers, $numberOfRounds);
+    $testSuite->expect($pairingMaker->getRounds())->toHaveCount($numberOfRounds);
   } catch (\Throwable $e) {
     $testSuite->assertFalse(true);
   }
@@ -77,8 +82,9 @@ TestSuite::test("A tournament should be able to handle many rounds.", function (
   try {
     $pairingMaker = TestUtils::playRandomTournament($numberOfPlayers, $numberOfRounds);
     $players = $pairingMaker->getPlayers();
-    $testSuite->expect($players[0]->getHistory())->toHaveCount($numberOfRounds);
-    $testSuite->expect($players[$numberOfPlayers - 1]->getHistory())->toHaveCount($numberOfRounds);
+    $histories = $pairingMaker->getHistories();
+    $testSuite->expect($histories[$players[0]->getId()])->toHaveCount($numberOfRounds);
+    $testSuite->expect($histories[$players[$numberOfPlayers - 1]->getId()])->toHaveCount($numberOfRounds);
     // echo json_encode(TestUtils::formatStandings($pairingMaker->getStandings()), JSON_PRETTY_PRINT) . "\n";
   } catch (\Throwable $e) {
     $testSuite->assertFalse(true, $e->getMessage());
